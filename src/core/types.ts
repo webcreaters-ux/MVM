@@ -34,3 +34,18 @@ export interface ProviderHealth {
   latencyMs?: number;
   error?: string;
 }
+
+export interface ProjectFile {
+  id: string;
+  path: string;
+  content: string;
+  language: string;
+  updatedAt: number;
+}
+
+export interface ForgeProject {
+  id: string;
+  name: string;
+  files: ProjectFile[];
+  updatedAt: number;
+}
