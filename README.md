@@ -4,21 +4,23 @@
 
 A privacy-first, open-source AI workspace for PC and mobile. MVM is a modular command center combining local AI, remote open-source models, vision, automation, coding tools and extensible plugins behind one responsive interface.
 
-## Current release — 0.4
+## Current release — 0.5
 
 - **AI Hub:** persistent local chat, provider selection and model selection.
 - **Vision Lab:** image/screenshot upload with configurable analysis prompts.
+- **Code Forge:** local multi-file projects, file tree, editor, language detection and project statistics.
+- **AI Copilot:** Explain, Improve and Generate actions routed through the selected provider.
+- **Safe-by-default coding:** generated code is displayed/edited but never automatically executed by the browser.
 - **Ollama adapter:** local `/api/chat` and vision-image support.
 - **OpenAI-compatible adapter:** `/chat/completions` text and image support.
 - **Demo mode:** works without an account, API key or network connection.
-- **Private local storage:** provider configuration, model choice and chat history stay in browser storage.
+- **Private local storage:** provider configuration, model choice, chat history and Code Forge projects stay in browser storage.
 - **PC + mobile responsive UI.**
 - **Automated CI:** type check, tests and production build.
 
 ## Planned capabilities
 
 - Document/PDF understanding
-- Code Forge with project files and AI coding actions
 - Flow Engine for reusable automations
 - Knowledge workspace and local retrieval
 - Voice input/output adapters
