@@ -1,12 +1,10 @@
-export type MVMModuleId = 'hub' | 'vision' | 'code' | 'flows' | 'vault' | 'modules';
+export type ProviderKind = 'ollama' | 'openai-compatible' | 'demo';
 
-export type ProviderKind = 'local' | 'remote';
-
-export interface AIProvider {
+export interface ModelProvider {
   id: string;
   name: string;
   kind: ProviderKind;
-  endpoint: string;
+  baseUrl: string;
   enabled: boolean;
 }
 
@@ -17,8 +15,22 @@ export interface ChatMessage {
   createdAt: number;
 }
 
-export interface MVMSettings {
-  theme: 'dark' | 'light';
-  activeModule: MVMModuleId;
-  providers: AIProvider[];
+export interface RouterRequest {
+  provider: ModelProvider;
+  model: string;
+  messages: ChatMessage[];
+  signal?: AbortSignal;
+}
+
+export interface RouterResponse {
+  content: string;
+  provider: string;
+  model: string;
+}
+
+export interface ProviderHealth {
+  providerId: string;
+  ok: boolean;
+  latencyMs?: number;
+  error?: string;
 }
