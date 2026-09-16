@@ -6,6 +6,8 @@ export interface ModelProvider {
   kind: ProviderKind;
   baseUrl: string;
   enabled: boolean;
+  /** Optional model pinned to this provider preset. */
+  model?: string;
 }
 
 export interface ChatMessage {
