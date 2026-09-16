@@ -8,14 +8,15 @@ export const FLOW_NODE_KINDS: FlowNodeKind[] = ['prompt', 'model', 'transform', 
 
 export function createFlow(name = 'New Flow'): FlowDefinition {
   const now = Date.now();
-  const prompt = createNode('prompt', 'Prompt', 80, 100, { prompt: '' });
-  const model = createNode('model', 'AI Model', 360, 100, { model: 'default' });
-  const output = createNode('output', 'Output', 640, 100, {});
+  const prompt = createNode('prompt', undefined, 80, 100, { prompt: '' });
+  const model = createNode('model', undefined, 360, 100, { model: 'default' });
+  const output = createNode('output', undefined, 640, 100, {});
   return { id: crypto.randomUUID(), name, description: 'Reusable local-first MVM automation.', nodes: [prompt, model, output], edges: [createEdge(prompt.id, model.id), createEdge(model.id, output.id)], updatedAt: now };
 }
 
-export function createNode(kind: FlowNodeKind, title = kind, x = 80, y = 80, config: Record<string, string> = {}): FlowNode {
-  return { id: crypto.randomUUID(), kind, title, config, x, y };
+export function createNode(kind: FlowNodeKind, title?: string, x = 80, y = 80, config: Record<string, string> = {}): FlowNode {
+  const defaultTitles: Record<FlowNodeKind, string> = { prompt: 'Prompt', model: 'AI Model', transform: 'Transform', condition: 'Condition', output: 'Output' };
+  return { id: crypto.randomUUID(), kind, title: title ?? defaultTitles[kind], config, x, y };
 }
 
 export function createEdge(from: string, to: string): FlowEdge {
@@ -25,7 +26,7 @@ export function createEdge(from: string, to: string): FlowEdge {
 
 export function addNode(flow: FlowDefinition, kind: FlowNodeKind): FlowDefinition {
   const index = flow.nodes.length;
-  return { ...flow, nodes: [...flow.nodes, createNode(kind, kind[0].toUpperCase() + kind.slice(1), 80 + (index % 3) * 280, 100 + Math.floor(index / 3) * 150)], updatedAt: Date.now() };
+  return { ...flow, nodes: [...flow.nodes, createNode(kind, undefined, 80 + (index % 3) * 280, 100 + Math.floor(index / 3) * 150)], updatedAt: Date.now() };
 }
 
 export function connectNodes(flow: FlowDefinition, from: string, to: string): FlowDefinition {
