@@ -16,4 +16,9 @@ describe('MVM router', () => {
     const provider: ModelProvider = { id: 'x', name: 'Remote', kind: 'openai-compatible', baseUrl: '', enabled: true };
     await expect(routeChat({ provider, model: 'test', messages })).rejects.toThrow('base URL');
   });
+
+  it('supports a provider-pinned open model without changing the shared fallback model', async () => {
+    const provider: ModelProvider = { id: 'deepseek', name: 'DeepSeek R1', kind: 'ollama', model: 'deepseek-r1:8b', baseUrl: '', enabled: true };
+    await expect(routeChat({ provider, model: 'llama3.2', messages })).rejects.toThrow('base URL');
+  });
 });
