@@ -25,7 +25,7 @@ describe('Agent Core', () => {
   });
 
   it('builds a context-aware prompt without claiming execution', () => {
-    const run = createAgentRun('Review a TypeScript project');
+    let run = createAgentRun('Review a TypeScript project');
     run = updateAgentTask(run, run.tasks[0].id, { status: 'completed', output: 'Found three modules.' });
     const prompt = buildAgentPrompt(run, run.tasks[1], 'src/main.ts: application entry point');
     expect(prompt).toContain('Researcher agent');
