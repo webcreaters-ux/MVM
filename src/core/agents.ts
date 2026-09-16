@@ -24,6 +24,13 @@ export interface AgentPlan {
   tasks: Array<Pick<AgentTask, 'title' | 'role' | 'instruction'>>;
 }
 
+export interface AgentExecutionResult {
+  run: AgentRun;
+  finalOutput: string;
+}
+
+export type AgentExecutor = (input: { prompt: string; role: AgentRole; task: AgentTask; run: AgentRun; signal?: AbortSignal }) => Promise<string>;
+
 const ROLE_LABELS: Record<AgentRole, string> = {
   planner: 'Planner',
   researcher: 'Researcher',
@@ -43,31 +50,11 @@ export function createAgentPlan(goal: string): AgentPlan {
   return {
     goal: clean,
     tasks: [
-      {
-        title: 'Plan the task',
-        role: 'planner',
-        instruction: `Break this goal into safe, concrete steps and identify required inputs: ${clean}`
-      },
-      {
-        title: 'Research context',
-        role: 'researcher',
-        instruction: `Gather relevant facts from the available local knowledge and workspace context for: ${clean}`
-      },
-      {
-        title: 'Build a solution',
-        role: 'builder',
-        instruction: `Produce an implementation or actionable solution for: ${clean}`
-      },
-      {
-        title: 'Review the result',
-        role: 'reviewer',
-        instruction: `Inspect the proposed result for correctness, missing requirements, unsafe assumptions and regressions: ${clean}`
-      },
-      {
-        title: 'Synthesize the answer',
-        role: 'synthesizer',
-        instruction: `Combine the available outputs into a concise final result for: ${clean}`
-      }
+      { title: 'Plan the task', role: 'planner', instruction: `Break this goal into safe, concrete steps and identify required inputs: ${clean}` },
+      { title: 'Research context', role: 'researcher', instruction: `Gather relevant facts from the available local knowledge and workspace context for: ${clean}` },
+      { title: 'Build a solution', role: 'builder', instruction: `Produce an implementation or actionable solution for: ${clean}` },
+      { title: 'Review the result', role: 'reviewer', instruction: `Inspect the proposed result for correctness, missing requirements, unsafe assumptions and regressions: ${clean}` },
+      { title: 'Synthesize the answer', role: 'synthesizer', instruction: `Combine the available outputs into a concise final result for: ${clean}` }
     ]
   };
 }
@@ -76,12 +63,9 @@ export function createAgentRun(goal: string): AgentRun {
   const plan = createAgentPlan(goal);
   const now = Date.now();
   return {
-    id: crypto.randomUUID(),
-    goal: plan.goal,
+    id: crypto.randomUUID(), goal: plan.goal,
     tasks: plan.tasks.map(task => ({ ...task, id: crypto.randomUUID(), status: 'queued', createdAt: now })),
-    status: 'ready',
-    createdAt: now,
-    updatedAt: now
+    status: 'ready', createdAt: now, updatedAt: now
   };
 }
 
@@ -115,6 +99,38 @@ export function buildAgentPrompt(run: AgentRun, task: AgentTask, context = ''): 
 
 export function canAdvance(run: AgentRun, task: AgentTask): boolean {
   const index = run.tasks.findIndex(candidate => candidate.id === task.id);
-  if (index <= 0) return true;
+  if (index < 0) return false;
+  if (index === 0) return true;
   return run.tasks.slice(0, index).every(candidate => candidate.status === 'completed');
+}
+
+export async function executeAgentRun(
+  initialRun: AgentRun,
+  executor: AgentExecutor,
+  context = '',
+  signal?: AbortSignal,
+  onUpdate?: (run: AgentRun) => void
+): Promise<AgentExecutionResult> {
+  let run: AgentRun = { ...initialRun, status: 'running', updatedAt: Date.now() };
+  onUpdate?.(run);
+
+  for (const task of run.tasks) {
+    if (signal?.aborted) throw new DOMException('Agent run cancelled.', 'AbortError');
+    if (!canAdvance(run, task)) throw new Error(`Agent dependency blocked: ${task.title}`);
+
+    run = updateAgentTask(run, task.id, { status: 'running' });
+    onUpdate?.(run);
+    try {
+      const output = await executor({ prompt: buildAgentPrompt(run, task, context), role: task.role, task, run, signal });
+      run = updateAgentTask(run, task.id, { status: 'completed', output: output.trim() || '(No output returned.)' });
+      onUpdate?.(run);
+    } catch (error) {
+      run = updateAgentTask(run, task.id, { status: 'failed', output: error instanceof Error ? error.message : 'Agent task failed.' });
+      onUpdate?.(run);
+      throw error;
+    }
+  }
+
+  const finalOutput = run.tasks.find(task => task.role === 'synthesizer')?.output ?? '';
+  return { run, finalOutput };
 }
