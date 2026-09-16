@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildAgentPrompt, canAdvance, createAgentPlan, createAgentRun, roleLabel, updateAgentTask } from './agents';
+import { buildAgentPrompt, canAdvance, createAgentPlan, createAgentRun, executeAgentRun, roleLabel, updateAgentTask } from './agents';
 
 describe('Agent Core', () => {
   it('creates a deterministic multi-agent plan', () => {
@@ -32,5 +32,22 @@ describe('Agent Core', () => {
     expect(prompt).toContain('Found three modules.');
     expect(prompt).toContain('src/main.ts');
     expect(prompt).toContain('Do not execute arbitrary code');
+  });
+
+  it('executes agents sequentially and exposes live state updates', async () => {
+    const run = createAgentRun('Create a test plan');
+    const updates: string[] = [];
+    const result = await executeAgentRun(run, async ({ role }) => `Output from ${role}`, 'local context', undefined, next => {
+      updates.push(next.tasks.map(task => task.status).join(','));
+    });
+    expect(result.run.status).toBe('completed');
+    expect(result.finalOutput).toBe('Output from synthesizer');
+    expect(updates.length).toBeGreaterThan(5);
+    expect(updates.at(-1)).toContain('completed');
+  });
+
+  it('fails safely when an agent executor throws', async () => {
+    const run = createAgentRun('Fail safely');
+    await expect(executeAgentRun(run, async () => { throw new Error('provider unavailable'); })).rejects.toThrow('provider unavailable');
   });
 });
