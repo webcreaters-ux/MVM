@@ -1,7 +1,8 @@
 import { readdir, stat } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 
-const root = new URL('../dist/', import.meta.url);
+const root = fileURLToPath(new URL('../dist/', import.meta.url));
 const limitBytes = 50 * 1024 * 1024;
 
 async function directorySize(directory) {
